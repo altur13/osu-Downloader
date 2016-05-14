@@ -3,6 +3,7 @@
 import requests
 import sys
 import json
+import os
 import os.path
 
 from osu_web_connection import *
@@ -22,15 +23,7 @@ def query_osusearch(query):
         else:
             for b in result['beatmaps']:
                 beatmap = Beatmap()
-                beatmap.title = b['title']
-                beatmap.beatmap_id = b['beatmap_id']
-                beatmap.artist = b['artist']
-                beatmap.mapper = b['mapper']
-                beatmap.bpm = b['bpm']
-                beatmap.add_status(b['beatmap_status'])
-                beatmap.length = b['total_length']
-                beatmap.favorites = b['favorites']
-                beatmap.diff_name = b['difficulty_name']
+                beatmap.build_from_query(b)
                 beatmap_list.append(beatmap)
         offset += 1
     return beatmap_list
@@ -83,7 +76,8 @@ def read_beatmap_list(file_name):
                 if l.startswith('#'):
                     continue
                 b = Beatmap()
-                beatmap_list.append(b.self_build(l))
+                b.build_from_file_line(l)
+                beatmap_list.append(b)
     return beatmap_list
 
 
@@ -91,6 +85,31 @@ def write_beatmap_list(beatmap_list, file_name):
     with open(file_name, "w+") as f:
         for b in beatmap_list:
             f.write(b.export_string() + "\n")
+
+
+def check_download_status(path):
+    beatmap_list = read_beatmap_list("__query_results.txt")
+    beatmap_dict = {}  # to assist on the search for beatmap
+    for b in beatmap_list:
+        beatmap_dict[b.beatmapset_id] = b
+
+    # builds file list
+    l = os.listdir(path)
+    l.sort()
+    file_list = []
+    for f in l:
+        file_list.append(f.split(" ")[0])
+
+    for bid in file_list:
+        if bid in beatmap_dict.keys():
+            print("Found " + bid + " on download dir...")
+            beatmap_dict[bid].download_status = "DOWNLOADED"
+
+    for b in beatmap_list:
+        print(b.download_status + ": " + str(b.beatmapset_id) + " -> " + b.artist + " - " + b.title + " (by " + b.mapper + ")")
+
+    write_beatmap_list(beatmap_list, "__query_results.txt")
+
 
 
 def main(args):
@@ -102,6 +121,13 @@ def main(args):
             b.print_info()
             print("")
         write_beatmap_list(beatmap_list, "__query_results.txt")
+    elif args[0] == "check":
+        if len(args) < 2 or not os.path.isdir(args[1]):
+            print("Error: check directory not specified")
+            exit(1)
+        check_download_status(args[1])
+
+
 
 
 if __name__ == "__main__":
