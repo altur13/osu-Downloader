@@ -5,6 +5,7 @@ import sys
 import json
 import os
 import os.path
+import time
 
 from osu_web_connection import *
 from query import *
@@ -96,8 +97,9 @@ def check_download_status(path):
     # builds file list
     l = os.listdir(path)
     l.sort()
+    filtered = [x for x in l if x.endswith(".osz")]
     file_list = []
-    for f in l:
+    for f in filtered:
         file_list.append(f.split(" ")[0])
 
     for bid in file_list:
@@ -111,21 +113,62 @@ def check_download_status(path):
     write_beatmap_list(beatmap_list, "__query_results.txt")
 
 
+def perform_query(query_string):
+    query = build_query(query_string)
+    beatmap_list = query_osusearch(query)
+    for b in beatmap_list:
+        b.print_info()
+        print("")
+    return beatmap_list
+
+def update_stored_results(new_query_results, file_path):
+    stored_results = read_beatmap_list(file_path)
+    beatmap_dict = {}
+    for b in stored_results:
+        beatmap_dict[b.beatmapset_id] = b
+
+    for n in new_query_results:
+        if n.beatmapset_id not in beatmap_dict.keys():
+            print("New beatmap " + str(n.beatmapset_id) + "...")
+            stored_results.append(n)
+    write_beatmap_list(stored_results, "__query_results.txt")
+
+def download_beatmap_list(download_list, download_dir):
+    conn = OsuWebConnection()
+    abs_path = os.path.abspath(download_dir)
+    stored_results = read_beatmap_list(download_list)
+    not_downloaded = [b for b in stored_results if b.download_status == "NOT DOWNLOADED"]
+    counter = 0
+    for b in not_downloaded:
+        conn.download_beatmap(b, abs_path)
+        write_beatmap_list(stored_results, download_list)
+        if b.download_status == "DOWNLOADED":
+            print("Waiting 30 secs for next download...")
+            time.sleep(30)  # sleeps for 30 secs, so that peppy doesn't get angry with us...
+        counter += 1
+        print(str(counter) + "/" + str(len(not_downloaded)) + " downloaded")
+    conn.close()
+
 
 def main(args):
     if args[0] == "query":
         print(os.getcwd())
-        query = build_query(args[1:])
-        beatmap_list = query_osusearch(query)
-        for b in beatmap_list:
-            b.print_info()
-            print("")
-        write_beatmap_list(beatmap_list, "__query_results.txt")
+        query_results = perform_query(args[1:])
+        write_beatmap_list(query_results, "__query_results.txt")
     elif args[0] == "check":
         if len(args) < 2 or not os.path.isdir(args[1]):
             print("Error: check directory not specified")
             exit(1)
         check_download_status(args[1])
+    elif args[0] == "update":
+        query_results = perform_query(args[1:])
+        update_stored_results(query_results, "__query_results.txt")
+    elif args[0] == "download":
+        if len(args) < 2 or not os.path.isdir(args[1]):
+            print("Error: download directory not found")
+            exit(1)
+        download_beatmap_list("__query_results.txt", args[1])
+
 
 
 
