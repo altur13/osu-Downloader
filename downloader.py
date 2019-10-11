@@ -44,6 +44,10 @@ def build_query(args):
             query.set_source(value)
         elif key == "diff_name":
             query.set_diff_name(value)
+        elif key == "min_length":
+            query.set_min_length(value)
+        elif key == "max_length":
+            query.set_max_length(value)
         elif key == "genres":
             for s in value.split(','):
                 query.add_genre(s)
@@ -143,8 +147,8 @@ def download_beatmap_list(download_list, download_dir):
         conn.download_beatmap(b, abs_path)
         write_beatmap_list(stored_results, download_list)
         if b.download_status == "DOWNLOADED":
-            print("Waiting 30 secs for next download...")
-            time.sleep(30)  # sleeps for 30 secs, so that peppy doesn't get angry with us...
+            print("Waiting 10 secs for next download...")
+            time.sleep(10)
         counter += 1
         print(str(counter) + "/" + str(len(not_downloaded)) + " downloaded")
     conn.close()

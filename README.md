@@ -40,6 +40,8 @@ modes="standard,mania"
 star_min="4.2"
 ar_min="9"
 order_by="favorites"
+min_length = "60"
+max_length = "120"
 ```
 
 Ex: A query that searches for all ranked standard miiro maps...

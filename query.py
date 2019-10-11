@@ -2,8 +2,6 @@ class OsuSearchQuery:
     # ignored parameters
     date_start = ""
     date_end = ""
-    min_length = ""
-    max_length = ""
     min_favorites = ""
     max_favorites = ""
     min_play_count = ""
@@ -32,6 +30,12 @@ class OsuSearchQuery:
 
     def set_diff_name(self, diff_name):
         self.query_dict['diff_name'] = diff_name
+    
+    def set_min_length(self, min_length):
+        self.query_dict['min_length'] = min_length
+
+    def set_max_length(self, max_length):
+        self.query_dict['max_length'] = max_length
 
     def add_genre(self, genre):
         self.query_dict['genres'].append(genre)
