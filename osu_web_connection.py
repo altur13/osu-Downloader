@@ -52,6 +52,11 @@ class OsuWebConnection:
         return False
     """
 
+    def convert_to_valid_filename(self, filename):
+        import string
+        valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+        return ''.join(c if c in valid_chars else '_' for c in filename)
+
     def download_beatmap(self, beatmap, base_path):
         #if not self.is_logged():
         #    self.do_login()
@@ -62,7 +67,7 @@ class OsuWebConnection:
             beatmap.download_status = "NOT AVAILABLE"
             return
 
-        filename_base = beatmap.beatmapset_id + " " + beatmap.artist + " - " + beatmap.title
+        filename_base = self.convert_to_valid_filename(beatmap.beatmapset_id + " " + beatmap.artist + " - " + beatmap.title)
         filename_temp = filename_base + ".temp"
         filename_final = filename_base + ".osz"
         # beatmap available, download it
